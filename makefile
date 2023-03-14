@@ -1,6 +1,6 @@
 CC = g++
 
-CFLAGS = -I./ -D _DEBUG -ggdb3 -std=c++2a -O0 -Wall -Wextra -Weffc++\
+CFLAGS = -I./ -I./include/ -D _DEBUG -ggdb3 -std=c++2a -O0 -Wall -Wextra -Weffc++\
 -Waggressive-loop-optimizations -Wc++14-compat -Wmissing-declarations\
 -Wcast-align -Wchar-subscripts -Wconditionally-supported\
 -Wconversion -Wctor-dtor-privacy -Wempty-body -Wfloat-equal -Wformat-nonliteral\
@@ -21,6 +21,8 @@ CFLAGS = -I./ -D _DEBUG -ggdb3 -std=c++2a -O0 -Wall -Wextra -Weffc++\
 }unreachable,vla-bound,vptr\
 -pie -Wlarger-than=65536 -Wstack-usage=8192 -lglut -lGLU -lGL
 
+SFML_LIBS = -lsfml-window -lsfml-system
+
 BLD_FOLDER = build
 ASSET_FOLDER = assets
 
@@ -38,7 +40,7 @@ LIB_OBJECTS = argparser.o logger.o debug.o alloc_tracker.o speaker.o util.o
 MAIN_OBJECTS = main.o main_utils.o common_utils.o $(LIB_OBJECTS)
 all: asset $(MAIN_OBJECTS)
 	mkdir -p $(BLD_FOLDER)
-	$(CC) $(MAIN_OBJECTS) $(CFLAGS) -o $(BLD_FOLDER)/$(MAIN_BLD_FULL_NAME)
+	$(CC) $(MAIN_OBJECTS) $(CFLAGS) -o $(BLD_FOLDER)/$(MAIN_BLD_FULL_NAME) $(SFML_LIBS)
 
 asset:
 	mkdir -p $(BLD_FOLDER)

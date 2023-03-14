@@ -14,6 +14,8 @@
 #include <cstring>
 #include <ctype.h>
 
+#include <SFML/Window.hpp>
+
 #include "lib/util/dbg/debug.h"
 #include "lib/util/argparser.h"
 #include "lib/alloc_tracker/alloc_tracker.h"
@@ -41,7 +43,14 @@ int main(const int argc, const char** argv) {
     log_init("program_log.html", log_threshold, &errno);
     print_label();
     
-    
+    sf::Window window(sf::VideoMode(800, 600), "My window");
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) window.close();
+        }
+    }
 
     return_clean(errno == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 }
