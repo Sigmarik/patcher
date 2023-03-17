@@ -94,6 +94,35 @@ const char* get_output_file_name(const int argc, const char** argv, const char* 
  */
 int max(int alpha, int beta);
 
+/**
+ * @brief Memory mapping result.
+ * 
+ * @param ptr pointer to the mapped area
+ * @param fd file descriptor
+ */
+struct MmapResult {
+    void* ptr = NULL;
+    int fd = 0;
+    size_t size = 0;
+};
+
+/**
+ * @brief Memory map file and return pointer to the mapped area.
+ * 
+ * @param name file name
+ * @param oflags open flags
+ * @param prot mmap protection flags
+ * @return MapResult
+*/
+MmapResult map_file(const char* name, int oflags, int prot);
+
+/**
+ * @brief Standard wrapper for close() function
+ * 
+ * @param file_descriptor 
+ */
+void std_close(void* file_descriptor_ptr);
+
 #define MAKE_WRAPPER(name) void* __wrapper_##name[] = {&name}
 
 /**

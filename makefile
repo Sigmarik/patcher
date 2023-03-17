@@ -35,7 +35,7 @@ BLD_FORMAT = .out
 BLD_SUFFIX = _v$(BLD_VERSION)_$(BLD_TYPE)_$(BLD_PLATFORM)$(BLD_FORMAT)
 MAIN_BLD_FULL_NAME = $(MAIN_BLD_NAME)$(BLD_SUFFIX)
 
-LIB_OBJECTS = argparser.o logger.o debug.o alloc_tracker.o speaker.o util.o
+LIB_OBJECTS = argparser.o logger.o debug.o alloc_tracker.o speaker.o util.o patch_parser.o
 
 MAIN_OBJECTS = main.o main_utils.o common_utils.o $(LIB_OBJECTS)
 all: asset $(MAIN_OBJECTS)
@@ -57,6 +57,9 @@ main_utils.o:
 
 common_utils.o:
 	$(CC) $(CFLAGS) -c src/utils/common_utils.cpp
+
+patch_parser.o:
+	$(CC) $(CFLAGS) -c lib/patch_parser/patch_parser.cpp
 
 alloc_tracker.o:
 	$(CC) $(CFLAGS) -c lib/alloc_tracker/alloc_tracker.cpp

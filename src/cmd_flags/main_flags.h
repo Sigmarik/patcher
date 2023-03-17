@@ -10,3 +10,7 @@
  */
 
 #include "common_flags.h"
+
+{ {'T', ""}, { GET_WRAPPER(max_tokens), 1, edit_int },
+    "set max number of tokens in patch file.\n"
+    "\tDoes not check if integer was specified." },
