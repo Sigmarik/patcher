@@ -40,7 +40,7 @@ LIB_OBJECTS = argparser.o logger.o debug.o alloc_tracker.o speaker.o util.o patc
 MAIN_OBJECTS = main.o main_utils.o common_utils.o $(LIB_OBJECTS)
 all: asset $(MAIN_OBJECTS)
 	mkdir -p $(BLD_FOLDER)
-	$(CC) $(MAIN_OBJECTS) $(CFLAGS) -o $(BLD_FOLDER)/$(MAIN_BLD_FULL_NAME) $(SFML_LIBS)
+	$(CC) $(MAIN_OBJECTS) $(CFLAGS) -o $(BLD_FOLDER)/$(MAIN_BLD_FULL_NAME)
 
 asset:
 	mkdir -p $(BLD_FOLDER)
