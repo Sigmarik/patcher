@@ -2,6 +2,10 @@
 
 #include <stdlib.h>
 #include <stdarg.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "lib/util/dbg/logger.h"
 #include "lib/util/dbg/debug.h"
@@ -78,4 +82,32 @@ const char* get_output_file_name(const int argc, const char** argv, const char* 
 
 int max(int alpha, int beta) {
     return alpha > beta ? alpha : beta;
+}
+
+MmapResult map_file(const char* name, int oflag, int prot) {
+    int fd = open(name, oflag);
+    log_printf(STATUS_REPORTS, "status", "Mapping file %s with descriptor %d\n", name, fd);
+    if (fd < 0) {
+        log_dup(ERROR_REPORTS, "error", "Failed to open file: %s\n", name);
+        close(fd);
+        return {};
+    }
+    struct stat st = {};
+    if (fstat(fd, &st) < 0) {
+        log_dup(ERROR_REPORTS, "error", "Failed to stat file: %s\n", name);
+        close(fd);
+        return {};
+    }
+    void* map = mmap(NULL, (size_t) st.st_size, prot, MAP_SHARED, fd, 0);
+    if (map == MAP_FAILED) {
+        log_dup(ERROR_REPORTS, "error", "Failed to mmap file: %s\n", name);
+        close(fd);
+        return {};
+    }
+    return (MmapResult) {.ptr = map, .fd = fd, .size = (size_t) st.st_size};
+}
+
+void std_close(void* file_descriptor_ptr) {
+    log_printf(STATUS_REPORTS, "status", "Closing file descriptor %d\n", *(int*)file_descriptor_ptr);
+    close(*(int*)file_descriptor_ptr);
 }

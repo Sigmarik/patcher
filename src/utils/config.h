@@ -15,4 +15,9 @@
 #include <stdlib.h>
 
 static const int NUMBER_OF_OWLS = 10;
+static const unsigned int DFLT_TOKEN_COUNT = 1024;
+
+static const char DFLT_PATCH_NAME[] = "patch.dat";
+static const char DFLT_PROGRAM_NAME[] = "CRACKME.COM";
+
 #endif
