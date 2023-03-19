@@ -6,8 +6,6 @@
 #include "lib/util/dbg/logger.h"
 #include "lib/util/dbg/debug.h"
 
-#include "lib/speaker.h"
-
 void print_label() {
     printf("\"CrackMe\" program patcher by Ilya Kudryashov.\n");
     printf("Binary file patcher.\n");

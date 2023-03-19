@@ -15,7 +15,7 @@ static bool isnum16(char symbol) {
 static unsigned char to_num(char symbol) {
     if ('0' <= symbol && symbol < '9')
         return (unsigned char) (symbol - '0');
-    return (char)10 + symbol - 'A';
+    return (unsigned char)(10 + symbol - 'A');
 }
 
 void tokenize(const char* const content, PatchToken* buffer, size_t buffer_length) {
@@ -37,7 +37,7 @@ void tokenize(const char* const content, PatchToken* buffer, size_t buffer_lengt
             *(current_token++) = (PatchToken) {
                 .line = line,
                 .position = (uintptr_t)cur - (uintptr_t)line_start,
-                .value = to_num(cur[0]) * 16 + to_num(cur[1]),
+                .value = (unsigned char) (to_num(cur[0]) * 16 + to_num(cur[1])),
                 .type = TOK_BYTE,
             };
             ++cur;
@@ -91,7 +91,7 @@ static int read_command(const PatchToken** token_ptr, char* file) {
     while ((*token_ptr)->type == TOK_BYTE) {
         log_printf(STATUS_REPORTS, "status", "Patching byte at address %04X with byte %02X\n", 
             (unsigned int) address, (*token_ptr)->value);
-        file[address++] = (*token_ptr)->value;
+        file[address++] = (char) (*token_ptr)->value;
         ++*token_ptr;
     }
 

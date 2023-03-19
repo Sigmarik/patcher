@@ -34,7 +34,6 @@ int main(const int argc, const char** argv) {
     atexit(log_end_program);
 
     start_local_tracking();
-
     unsigned int log_threshold = STATUS_REPORTS;
     MAKE_WRAPPER(log_threshold);
 

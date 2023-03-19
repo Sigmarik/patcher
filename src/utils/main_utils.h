@@ -9,8 +9,8 @@
  * 
  */
 
-#ifndef GAME_UTILS_H
-#define GAME_UTILS_H
+#ifndef MAIN_UTILS_H
+#define MAIN_UTILS_H
 
 #include <cstring>
 #include <ctype.h>
