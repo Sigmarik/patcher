@@ -16,7 +16,7 @@
 #include <ctype.h>
 
 #include "config.h"
-#include "lib/alloc_tracker/alloc_tracker.h"
+// #include "lib/alloc_tracker/alloc_tracker.h"
 
 /**
  * @brief Array with stored size.
