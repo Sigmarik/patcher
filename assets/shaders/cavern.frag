@@ -6,6 +6,11 @@ uniform vec3 cam_right;
 uniform float cam_fov;
 uniform float cam_ar;
 
+const float PI = 3.1415926535897;
+
+const float ANIMATION_SPEED = 0.4;
+const float THEME_SPEED = 0.01;
+
 const int DIRECT_COMPLEXITY = 128;
 const int SHADOW_COMPLEXITY = 16;
 const float CONTACT_THRESHOLD = 0.01;
@@ -17,10 +22,11 @@ const vec3 FOG_COLOR = vec3(0.7, 0.75, 1.0);
 const vec3 SKY_COLOR = vec3(0.1, 0.13, 0.6);
 const vec3 ATMO_SAT = vec3(0.9, 0.9, 0.95);
 
-const vec3 GLOBE_COLOR = vec3(0.2, 0.2, 0.3);
+const vec3 GLOBE_COLOR = vec3(0.4, 0.4, 0.6);
 const vec3 LAKE_COLOR = vec3(0.1, 0.1, 0.7);
 const vec3 FOAM_COLOR = vec3(0.3, 0.3, 0.7);
-const vec3 LAND_COLOR = vec3(0.2, 0.3, 0.1);
+const vec3 LAND_COLOR = vec3(0.4, 0.3, 0.1);
+// const vec3 LAND_COLOR = vec3(0.2, 0.3, 0.1);
 
 const vec3 GLOBE_POS = vec3(0.0, 1.2, 0.0);
 const float GLOBE_RADIUS = 0.53;
@@ -52,7 +58,7 @@ float SmoothNoise(vec3 pos) {
             for (int dz = 0; dz <= 1; ++dz) {
                 vec3 vertex = vec3(float(round_x + dx), float(round_y + dy), float(round_z + dz));
                 // result += Noise(vertex);// * clamp(InterpDistance(vertex, pos), 0.0, 1.0);
-                result += Noise(vertex) * clamp(InterpDistance(vertex, pos), 0.0, 1.0);
+                result += Noise(vertex) * InterpDistance(vertex, pos);
             }
         }
     }
@@ -64,13 +70,19 @@ float SphereSdf(vec3 pos, vec3 center, float radius) {
 }
 
 float GlobeSdf(vec3 pos) {
-    return SphereSdf(pos, GLOBE_POS + vec3(0.0, sin(time * 0.3) * 0.1, 0.0), GLOBE_RADIUS);
+    return SphereSdf(pos, GLOBE_POS - vec3(0.0, sin(time * ANIMATION_SPEED) * 0.2, 0.0), GLOBE_RADIUS);
 }
+
+// float LandSdf(vec3 pos) {
+//     return (pos.y - LAKE_HEIGHT + 
+//         0.2 * cos(length(pos.xz) * 3.0 + 0.2) + 
+//         0.06 * SmoothNoise(vec3(pos.x * 10.0, 0.0, pos.z * 10.0))) * 0.9;
+// }
 
 float LandSdf(vec3 pos) {
     return (pos.y - LAKE_HEIGHT + 
-        0.2 * cos(length(pos.xz) * 3.0 + 0.2) + 
-        0.02 * SmoothNoise(vec3(pos.x * 10.0, 0.0, pos.z * 10.0))) * 0.9;
+        0.2 * cos(length(pos.xz) * 3.0 - time * ANIMATION_SPEED + 0.2) + 
+        0.01 * SmoothNoise(vec3(pos.x * 10.0, 0.0, pos.z * 10.0))) * 0.9;
 }
 
 float LakeSdf(vec3 pos) {
@@ -161,7 +173,10 @@ void main() {
         if (object_id == 0) {material = vec2(0.2, 30.0); final_color = GLOBE_COLOR;}
         if (object_id == 1) {material = vec2(1.0, 50.0); 
                              final_color = mixclamp(FOAM_COLOR, LAKE_COLOR, LandSdf(ray_position) * 10.0);}
-        if (object_id == 2) {material = vec2(0.2, 30.0); final_color = LAND_COLOR;}
+        if (object_id == 2) {material = vec2(0.2, 30.0); final_color = vec3(0.3, 0.3, 0.3) +
+                                0.2 * vec3(sin(time * THEME_SPEED - PI / 6.0), 
+                                           cos(time * 0.9 * THEME_SPEED + PI / 2.0), 
+                                           sin(time * 0.5 * THEME_SPEED - PI / 2.0));}
 
         vec3 normal = SceneNormal(ray_position);
 
@@ -179,7 +194,9 @@ void main() {
             final_color += material.r * pow(Specular(normal, SUN_DIRECTION, normalize(cam_pos - ray_position)), material.g);
     }
 
-    gl_FragColor = vec4(final_color.r, final_color.g, final_color.b, 1.0);
+    gl_FragColor = vec4(smoothstep(0.0, 1.0, final_color.r),
+                        smoothstep(0.0, 1.0, final_color.g),
+                        smoothstep(0.0, 1.0, final_color.b), 1.0);
 
     // gl_FragColor = vec4(SmoothNoise(ray_position));
 }
