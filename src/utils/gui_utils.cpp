@@ -25,7 +25,7 @@ void set_camera_uniforms(const Camera camera, sf::Shader* shader) {
 }
 
 void init_scene(RenderScene* scene) {
-    scene->camera = (Camera) {.position = glm::vec3(0.0f, 1.0f, 1.0f),
+    scene->camera = (Camera) {.position = glm::vec3(0.0f, 0.0f, 0.0f),
                               .forward  = glm::vec3(0.0f, 0.0f, -1.0f),
                               .up       = glm::vec3(0.0f, 1.0f, 0.0f),
                               .fov = 90};
@@ -43,7 +43,7 @@ void update_scene(RenderScene* scene, sf::RenderWindow* window, sf::Time dt) {
     glm::vec2 rel_mouse_pos = glm::vec2(mouse_pos.x, mouse_pos.y) * 2.0f / glm::vec2(SCREEN_WIDTH, SCREEN_HEIGHT) - 
                               glm::vec2(1.0f, 1.0f);
     rel_mouse_pos.y *= -1.0f;
-    scene->camera.position = glm::vec3(0.0f, 1.0f, 1.0f) + glm::vec3(rel_mouse_pos, 0.0f) * 0.1f;
+    scene->camera.position = glm::vec3(0.0f, 1.0f, 2.0f) + glm::vec3(rel_mouse_pos, 0.0f) * 0.1f;
 
     scene->time += dt;
     scene->last_update_time = scene->time;
