@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include <x86intrin.h>
+
 #include "lib/util/dbg/logger.h"
 #include "lib/util/dbg/debug.h"
 
@@ -31,10 +33,8 @@ void init_scene(RenderScene* scene) {
                               .fov = 90};
     scene->time = sf::Time::Zero;
     scene->last_update_time = sf::Time::Zero;
-    scene->canvas[0] = sf::Vertex(sf::Vector2f(0.0f,                                  0.0f), sf::Color::Black,  sf::Vector2f(0.0f, 0.0f));
-    scene->canvas[1] = sf::Vertex(sf::Vector2f(0.0f,                 (float) SCREEN_HEIGHT), sf::Color::Red,    sf::Vector2f(0.0f, 1.0f));
-    scene->canvas[2] = sf::Vertex(sf::Vector2f((float) SCREEN_WIDTH, (float) SCREEN_HEIGHT), sf::Color::Yellow, sf::Vector2f(1.0f, 1.0f));
-    scene->canvas[3] = sf::Vertex(sf::Vector2f((float) SCREEN_WIDTH,                  0.0f), sf::Color::Green,  sf::Vector2f(1.0f, 0.0f));
+    scene->texture.create(SCREEN_WIDTH, SCREEN_HEIGHT);
+    scene->sprite = sf::Sprite(scene->texture);
     scene->camera.aspect_ratio = (float) SCREEN_WIDTH / (float) SCREEN_HEIGHT;
 }
 
@@ -51,8 +51,63 @@ void update_scene(RenderScene* scene, sf::RenderWindow* window, sf::Time dt) {
 
 void draw_scene(RenderScene* scene, sf::Shader* shader, sf::RenderWindow* window) {
     shader->setUniform("time", scene->time.asSeconds());
-    set_camera_uniforms(scene->camera, shader);
-    window->draw(scene->canvas, shader);
+    shader->setUniform("texture", scene->texture);
+
+    float animation_stage = (float) sin((double) scene->time.asSeconds()) / 2.0f + 0.5f;
+    float scale = 1.0f / (0.5f + animation_stage * 50.0);
+
+    const __m256 shifter = _mm256_mul_ps(_mm256_set_ps(
+        0 * SCENE_SCALE, 
+        1 * SCENE_SCALE, 
+        2 * SCENE_SCALE, 
+        3 * SCENE_SCALE, 
+        4 * SCENE_SCALE, 
+        5 * SCENE_SCALE, 
+        6 * SCENE_SCALE, 
+        7 * SCENE_SCALE), _mm256_set1_ps(scale));
+
+    const __m256 DEATH_DISTANCE = _mm256_set1_ps(POINT_DEATH_DISTANCE * POINT_DEATH_DISTANCE);
+
+    static sf::Uint8 pixels[SCREEN_WIDTH * SCREEN_HEIGHT * 4] = "";
+    static unsigned pixel_buffer[8] = {};
+
+    for (size_t pixel_id = 0; pixel_id + 7 < SCREEN_WIDTH * SCREEN_HEIGHT; pixel_id += 8) {
+        int pixel_x = (int) pixel_id % (int) SCREEN_WIDTH - (int) SCREEN_WIDTH / 2,
+            pixel_y = (int) pixel_id / (int) SCREEN_WIDTH - (int) SCREEN_HEIGHT / 2;
+
+        __m256 local_x = _mm256_set1_ps((float) pixel_x * SCENE_SCALE * scale + SCENE_X_PAN),
+               local_y = _mm256_set1_ps((float) pixel_y * SCENE_SCALE * scale);
+        
+        local_x = _mm256_sub_ps(local_x, shifter);
+        
+        __m256 current_x = local_x, current_y = local_y;
+        __m256i iter_count = _mm256_set1_epi32(0);
+
+        for (unsigned iter_id = 0; iter_id < RENDER_ITERATION_COUNT; ++iter_id) {
+            __m256 previous_x = current_x, previous_y = current_y;
+            current_x = _mm256_add_ps(_mm256_sub_ps(
+                _mm256_mul_ps(previous_x, previous_x),
+                _mm256_mul_ps(previous_y, previous_y)), local_x);
+            __m256 x_by_y = _mm256_mul_ps(previous_x, previous_y);
+            current_y = _mm256_add_ps(_mm256_add_ps(x_by_y, x_by_y), local_y);
+
+            __m256 distance = _mm256_add_ps(_mm256_mul_ps(current_x, current_x), _mm256_mul_ps(current_y, current_y));
+            __m256i condition = (__m256i) _mm256_cmp_ps(DEATH_DISTANCE, distance, 14);
+            condition = _mm256_abs_epi32(condition);
+            iter_count = _mm256_add_epi32(iter_count, condition);
+        }
+
+        _mm256_storeu_si256((__m256i*) pixel_buffer, iter_count);
+
+        for (unsigned id = 0; id < 8; id++) {
+            pixels[(pixel_id + id) * 4] = (sf::Uint8) sqrt(pixel_buffer[id] * 256);
+            pixels[(pixel_id + id) * 4 + 3] = 255;
+        }
+    }
+
+    scene->texture.update(pixels);
+
+    window->draw(scene->sprite);
 }
 
 void on_closure_event(sf::Event event, sf::RenderWindow* window) {

@@ -40,6 +40,8 @@ struct RenderScene {
     sf::Time time = sf::Time::Zero;
     sf::Time last_update_time = sf::Time::Zero;
     sf::VertexArray canvas = sf::VertexArray(sf::Quads, 4);
+    sf::Texture texture;
+    sf::Sprite sprite;
 };
 
 void init_scene(RenderScene* scene);

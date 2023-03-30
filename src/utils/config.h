@@ -24,4 +24,9 @@ static const char DFLT_PROGRAM_NAME[] = "CRACKME.COM";
 static const unsigned SCREEN_WIDTH = 800;
 static const unsigned SCREEN_HEIGHT = 600;
 
+static const unsigned int RENDER_ITERATION_COUNT = 256;
+static const float SCENE_SCALE = 3.0f / (float) SCREEN_WIDTH;
+static const float SCENE_X_PAN = -1.48f;
+static const float POINT_DEATH_DISTANCE = 10;
+
 #endif

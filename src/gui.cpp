@@ -45,7 +45,7 @@ int main(const int argc, const char** argv) {
 
     char patcher_call[MAX_CALL_LENGTH] = PATCHER_NAME;
     char* word_ptr = patcher_call + strlen(patcher_call);
-    for (size_t word_id = 1; word_id < argc; ++word_id) {
+    for (size_t word_id = 1; word_id < (size_t) argc; ++word_id) {
         *(word_ptr++) = ' ';
         strcpy(word_ptr, argv[word_id]);
         word_ptr += strlen(argv[word_id]);
@@ -62,7 +62,7 @@ int main(const int argc, const char** argv) {
     }
 
     sf::Shader shader;
-    if (!shader.loadFromFile("shaders/cavern.frag", sf::Shader::Fragment)) {
+    if (!shader.loadFromFile("shaders/textured.frag", sf::Shader::Fragment)) {
         log_dup(ERROR_REPORTS, "error", "Failed to load shader!\n");
         return_clean(EXIT_FAILURE);
     }

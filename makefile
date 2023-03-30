@@ -1,6 +1,7 @@
 CC = g++
 
-CPPFLAGS = -I./ -I./include/ -D _DEBUG -ggdb3 -std=c++2a -O0 -Wall -Wextra -Weffc++\
+CPPFLAGS = -I./ -I./include/ -D _DEBUG -ggdb3 -std=c++2a -O2 -Wall -Wextra -Weffc++\
+-march=corei7 -mavx2\
 -Waggressive-loop-optimizations -Wc++14-compat -Wmissing-declarations\
 -Wcast-align -Wchar-subscripts -Wconditionally-supported\
 -Wconversion -Wctor-dtor-privacy -Wempty-body -Wfloat-equal -Wformat-nonliteral\
@@ -12,14 +13,14 @@ CPPFLAGS = -I./ -I./include/ -D _DEBUG -ggdb3 -std=c++2a -O0 -Wall -Wextra -Weff
 -Wswitch-enum -Wsync-nand -Wundef -Wunreachable-code -Wunused -Wuseless-cast\
 -Wvariadic-macros -Wno-literal-suffix -Wno-missing-field-initializers\
 -Wno-narrowing -Wno-old-style-cast -Wno-varargs -Wstack-protector\
--fcheck-new\
--fsized-deallocation -fstack-protector -fstrict-overflow -flto-odr-type-merging\
--fno-omit-frame-pointer -fPIE -fsanitize=address,bool,${strip \
-}bounds,enum,float-cast-overflow,float-divide-by-zero,${strip \
-}integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,${strip \
-}returns-nonnull-attribute,shift,signed-integer-overflow,undefined,${strip \
-}unreachable,vla-bound,vptr\
--pie -Wlarger-than=65536 -Wstack-usage=8192 -lglut -lGLU -lGL
+-pie -Wstack-usage=8192 -lglut -lGLU -lGL
+# -fcheck-new\
+# -fsized-deallocation -fstack-protector -fstrict-overflow -flto-odr-type-merging\
+# -fno-omit-frame-pointer -fPIE -fsanitize=address,bool,${strip \
+# }bounds,enum,float-cast-overflow,float-divide-by-zero,${strip \
+# }integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,${strip \
+# }returns-nonnull-attribute,shift,signed-integer-overflow,undefined,${strip \
+# }unreachable,vla-bound,vptr\
 
 SFML_LIBS = -lsfml-window -lsfml-graphics -lsfml-system
 GLM_LIBS = -libglm-dev
@@ -59,14 +60,14 @@ MAIN_OBJECTS = src/main.o 				\
 main: asset $(addprefix $(PROJ_DIR)/, $(MAIN_OBJECTS))
 	@echo "Started"
 	@mkdir -p $(BLD_FOLDER)
-	$(CC) $(addprefix $(PROJ_DIR)/, $(MAIN_OBJECTS)) $(CPPFLAGS) -o $(BLD_FOLDER)/$(MAIN_BLD_FULL_NAME)
+	@$(CC) $(addprefix $(PROJ_DIR)/, $(MAIN_OBJECTS)) $(CPPFLAGS) -o $(BLD_FOLDER)/$(MAIN_BLD_FULL_NAME)
 
 GUI_OBJECTS = src/gui.o 				\
 			  src/utils/gui_utils.o 	\
 			  src/utils/common_utils.o $(LIB_OBJECTS)
 gui: asset main $(addprefix $(PROJ_DIR)/, $(GUI_OBJECTS))
 	@mkdir -p $(BLD_FOLDER)
-	$(CC) $(addprefix $(PROJ_DIR)/, $(GUI_OBJECTS)) $(CPPFLAGS) -o $(BLD_FOLDER)/$(GUI_BLD_FULL_NAME) $(SFML_LIBS)
+	@$(CC) $(addprefix $(PROJ_DIR)/, $(GUI_OBJECTS)) $(CPPFLAGS) -o $(BLD_FOLDER)/$(GUI_BLD_FULL_NAME) $(SFML_LIBS)
 
 asset:
 	@mkdir -p $(BLD_FOLDER)
@@ -80,7 +81,7 @@ run_gui: asset
 
 src/gui.o: src/gui.cpp
 	@echo Building special file $^
-	$(CC) $(CPPFLAGS) -D'PATCHER_NAME="./$(MAIN_BLD_FULL_NAME)"' -c $^ -o $@
+	@$(CC) $(CPPFLAGS) -D'PATCHER_NAME="./$(MAIN_BLD_FULL_NAME)"' -c $^ -o $@
 
 %.o: %.cpp
 	@echo Building file $^
