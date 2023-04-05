@@ -77,10 +77,18 @@ void draw_scene(RenderScene* scene, sf::Shader* shader, sf::RenderWindow* window
     for (size_t pixel_id = 0; pixel_id + 7 < SCREEN_WIDTH * SCREEN_HEIGHT; pixel_id += 8) {
         int pixel_x = (int) pixel_id % (int) SCREEN_WIDTH,
             pixel_y = (int) pixel_id / (int) SCREEN_WIDTH;
+        
+        if (pixel_y * (int) scene->background.getSize().x + pixel_x + 7 >=
+            scene->background.getSize().x * scene->background.getSize().y) continue;
 
-        if (pixel_x < scene->foreground_position.x || pixel_y < scene->foreground_position.y) continue;
-        if (pixel_x + 7 >= scene->foreground_position.x + (int) scene->foreground.getSize().x ||
-            pixel_y >= scene->foreground_position.y + (int) scene->foreground.getSize().y) continue;
+        if ((pixel_x < scene->foreground_position.x || pixel_y < scene->foreground_position.y) ||
+            (pixel_x + 7 >= scene->foreground_position.x + (int) scene->foreground.getSize().x ||
+            pixel_y >= scene->foreground_position.y + (int) scene->foreground.getSize().y)) {
+
+            memcpy(pixels + pixel_id * 4, background_pixels + 
+            4 * (pixel_y * (int) scene->background.getSize().x + pixel_x), sizeof(sf::Uint8) * 4 * 8);
+            continue;
+        }
 
         __m256i local_x = _mm256_set1_epi32(pixel_x),
                 local_y = _mm256_set1_epi32(pixel_y);
