@@ -43,6 +43,16 @@ void init_scene(RenderScene* scene) {
     scene->camera.aspect_ratio = (float) SCREEN_WIDTH / (float) SCREEN_HEIGHT;
 }
 
+void scene_dtor(RenderScene* scene) {
+    scene->foreground.~Image();
+    scene->background.~Image();
+    scene->display_sprite.~Sprite();
+    scene->display_texture.~Texture();
+    scene->time = sf::Time::Zero;
+    scene->last_update_time = sf::Time::Zero;
+    scene->camera = (Camera) {};
+}
+
 void update_scene(RenderScene* scene, sf::RenderWindow* window, sf::Time dt) {
     sf::Vector2i mouse_pos = sf::Mouse::getPosition(*window);
     glm::vec2 rel_mouse_pos = glm::vec2(mouse_pos.x, mouse_pos.y) * 2.0f / glm::vec2(SCREEN_WIDTH, SCREEN_HEIGHT) - 
@@ -67,25 +77,25 @@ void draw_scene(RenderScene* scene, sf::Shader* shader, sf::RenderWindow* window
     for (size_t pixel_id = 0; pixel_id + 7 < SCREEN_WIDTH * SCREEN_HEIGHT; pixel_id += 8) {
         int pixel_x = (int) pixel_id % (int) SCREEN_WIDTH,
             pixel_y = (int) pixel_id / (int) SCREEN_WIDTH;
-        
+
         if (pixel_x < scene->foreground_position.x || pixel_y < scene->foreground_position.y) continue;
-        if (pixel_x + 7 >= scene->foreground_position.x + scene->foreground.getSize().x ||
-            pixel_y >= scene->foreground_position.y + scene->foreground.getSize().y) continue;
+        if (pixel_x + 7 >= scene->foreground_position.x + (int) scene->foreground.getSize().x ||
+            pixel_y >= scene->foreground_position.y + (int) scene->foreground.getSize().y) continue;
 
         __m256i local_x = _mm256_set1_epi32(pixel_x),
                 local_y = _mm256_set1_epi32(pixel_y);
         
         local_x = _mm256_sub_epi32(local_x, shifter);
 
-        __m256i color_bkg = _mm256_loadu_epi8(background_pixels +
-            pixel_y * scene->background.getSize().x + pixel_x);
-        __m256i color_frg = _mm256_loadu_epi8(foreground_pixels +
-            (pixel_y - scene->foreground_position.y) * scene->foreground.getSize().x +
-            pixel_x - scene->foreground_position.x);
+        __m256i color_bkg = _mm256_loadu_si256((__m256i_u*) (background_pixels +
+            4 * (pixel_y * (int) scene->background.getSize().x + pixel_x)));
+        __m256i color_frg = _mm256_loadu_si256((__m256i_u*) (foreground_pixels +
+            4 * ((pixel_y - scene->foreground_position.y) * (int) scene->foreground.getSize().x +
+            pixel_x - scene->foreground_position.x)));
 
-        _mm256_storeu_epi8(pixels + pixel_id * 4, color_frg);
+        _mm256_storeu_si256((__m256i_u*) (pixels + pixel_id * 4), color_frg);
 
-        memcpy(pixels + pixel_id * 4, pixel_buffer, sizeof(pixel_buffer));
+        // memcpy(pixels + pixel_id * 4, pixel_buffer, sizeof(pixel_buffer));
     }
 
     scene->display_texture.update(pixels);

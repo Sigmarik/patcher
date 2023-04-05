@@ -72,6 +72,8 @@ int main(const int argc, const char** argv) {
     RenderScene scene = {};
     init_scene(&scene);
 
+    track_allocation(scene, scene_dtor);
+
     sf::RenderWindow window(sf::VideoMode(SCREEN_WIDTH, SCREEN_HEIGHT), "Cracked y'all!");
 
     while (window.isOpen()) {
@@ -79,8 +81,8 @@ int main(const int argc, const char** argv) {
         ticker_clock.restart();
 
         static char title[128] = "";
-        sprintf(title, "Cracked y'all! [FPS: %d, RPS: %d]",
-            (int) (1.0 / delta_time.asSeconds()), (int) ((float) EVALUATION_WEIGHT / delta_time.asSeconds()));
+        sprintf(title, "Cracked y'all! [FPS: %d]",
+            (int) (1.0 / delta_time.asSeconds()));
 
         window.setTitle(std::string(title));
 

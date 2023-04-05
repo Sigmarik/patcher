@@ -41,12 +41,13 @@ struct RenderScene {
     sf::Time last_update_time = sf::Time::Zero;
     sf::Image background;
     sf::Image foreground;
-    sf::Vector2i foreground_position = sf::Vector2i::Zero;
+    sf::Vector2i foreground_position = sf::Vector2i(0, 0);
     sf::Texture display_texture;
     sf::Sprite display_sprite;
 };
 
 void init_scene(RenderScene* scene);
+void scene_dtor(RenderScene* scene);
 
 void update_scene(RenderScene* scene, sf::RenderWindow* window, sf::Time dt);
 
