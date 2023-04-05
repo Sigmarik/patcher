@@ -33,8 +33,13 @@ void init_scene(RenderScene* scene) {
                               .fov = 90};
     scene->time = sf::Time::Zero;
     scene->last_update_time = sf::Time::Zero;
-    scene->texture.create(SCREEN_WIDTH, SCREEN_HEIGHT);
-    scene->sprite = sf::Sprite(scene->texture);
+
+    _LOG_FAIL_CHECK_(scene->background.loadFromFile(BACKGROUND_NAME), "error", ERROR_REPORTS, return, &errno, ENOENT);
+    _LOG_FAIL_CHECK_(scene->foreground.loadFromFile(FOREGROUND_NAME), "error", ERROR_REPORTS, return, &errno, ENOENT);
+
+    scene->display_texture.create(SCREEN_WIDTH, SCREEN_HEIGHT);
+    scene->display_sprite = sf::Sprite(scene->display_texture);
+
     scene->camera.aspect_ratio = (float) SCREEN_WIDTH / (float) SCREEN_HEIGHT;
 }
 
@@ -43,109 +48,49 @@ void update_scene(RenderScene* scene, sf::RenderWindow* window, sf::Time dt) {
     glm::vec2 rel_mouse_pos = glm::vec2(mouse_pos.x, mouse_pos.y) * 2.0f / glm::vec2(SCREEN_WIDTH, SCREEN_HEIGHT) - 
                               glm::vec2(1.0f, 1.0f);
     rel_mouse_pos.y *= -1.0f;
-    scene->camera.position = glm::vec3(0.0f, 1.0f, 2.0f) + glm::vec3(rel_mouse_pos, 0.0f) * 0.1f;
+
+    scene->foreground_position = mouse_pos;
 
     scene->time += dt;
     scene->last_update_time = scene->time;
 }
 
 void draw_scene(RenderScene* scene, sf::Shader* shader, sf::RenderWindow* window) {
-    float animation_stage = (float) sin((double) scene->time.asSeconds() * ANIMATION_SPEED) / 2.0f + 0.5f;
-    float scale = 1.0f / (0.5f + ANIMATION_BRANCH(animation_stage, 1.0) * MAX_MAGNIFICATION);
-
-    const __m256 shifter = _mm256_mul_ps(_mm256_set_ps(
-        0 * SCENE_SCALE, 
-        1 * SCENE_SCALE, 
-        2 * SCENE_SCALE, 
-        3 * SCENE_SCALE, 
-        4 * SCENE_SCALE, 
-        5 * SCENE_SCALE, 
-        6 * SCENE_SCALE, 
-        7 * SCENE_SCALE), _mm256_set1_ps(scale));
-
-    const __m256 DEATH_DISTANCE = _mm256_set1_ps(POINT_DEATH_DISTANCE * POINT_DEATH_DISTANCE);
+    __m256i shifter = _mm256_set_epi32(0, 1, 2, 3, 4, 5, 6, 7);
 
     static sf::Uint8 pixels[SCREEN_WIDTH * SCREEN_HEIGHT * 4] = "";
-    static unsigned pixel_buffer[8] = {};
+    unsigned pixel_buffer[8 * 4] = {};
 
-    for (unsigned evaluation_pass_id = 0; evaluation_pass_id < EVALUATION_WEIGHT; ++evaluation_pass_id) {
+    const sf::Uint8* background_pixels = scene->background.getPixelsPtr();
+    const sf::Uint8* foreground_pixels = scene->foreground.getPixelsPtr();
 
-    ON_SIMD(
     for (size_t pixel_id = 0; pixel_id + 7 < SCREEN_WIDTH * SCREEN_HEIGHT; pixel_id += 8) {
-        int pixel_x = (int) pixel_id % (int) SCREEN_WIDTH - (int) SCREEN_WIDTH / 2,
-            pixel_y = (int) pixel_id / (int) SCREEN_WIDTH - (int) SCREEN_HEIGHT / 2;
-
-        __m256 local_x = _mm256_set1_ps((float) pixel_x * SCENE_SCALE * scale + SCENE_X_PAN),
-               local_y = _mm256_set1_ps((float) pixel_y * SCENE_SCALE * scale);
+        int pixel_x = (int) pixel_id % (int) SCREEN_WIDTH,
+            pixel_y = (int) pixel_id / (int) SCREEN_WIDTH;
         
-        local_x = _mm256_sub_ps(local_x, shifter);
+        if (pixel_x < scene->foreground_position.x || pixel_y < scene->foreground_position.y) continue;
+        if (pixel_x + 7 >= scene->foreground_position.x + scene->foreground.getSize().x ||
+            pixel_y >= scene->foreground_position.y + scene->foreground.getSize().y) continue;
+
+        __m256i local_x = _mm256_set1_epi32(pixel_x),
+                local_y = _mm256_set1_epi32(pixel_y);
         
-        __m256 current_x = local_x, current_y = local_y;
-        __m256i iter_count = _mm256_set1_epi32(0);
+        local_x = _mm256_sub_epi32(local_x, shifter);
 
-        for (unsigned iter_id = 0; iter_id < RENDER_ITERATION_COUNT; ++iter_id) {
-            __m256 previous_x = current_x, previous_y = current_y;
-            current_x = _mm256_add_ps(_mm256_sub_ps(
-                _mm256_mul_ps(previous_x, previous_x),
-                _mm256_mul_ps(previous_y, previous_y)), local_x);
-            __m256 x_by_y = _mm256_mul_ps(previous_x, previous_y);
-            current_y = _mm256_add_ps(_mm256_add_ps(x_by_y, x_by_y), local_y);
+        __m256i color_bkg = _mm256_loadu_epi8(background_pixels +
+            pixel_y * scene->background.getSize().x + pixel_x);
+        __m256i color_frg = _mm256_loadu_epi8(foreground_pixels +
+            (pixel_y - scene->foreground_position.y) * scene->foreground.getSize().x +
+            pixel_x - scene->foreground_position.x);
 
-            __m256 distance = _mm256_add_ps(_mm256_mul_ps(current_x, current_x), _mm256_mul_ps(current_y, current_y));
-            __m256i condition = (__m256i) _mm256_cmp_ps(DEATH_DISTANCE, distance, 14);
-            condition = _mm256_abs_epi32(condition);
-            iter_count = _mm256_add_epi32(iter_count, condition);
+        _mm256_storeu_epi8(pixels + pixel_id * 4, color_frg);
 
-            if (_mm256_movemask_epi8(condition)) break;
-        }
-
-        _mm256_storeu_si256((__m256i*) pixel_buffer, iter_count);
-
-        for (unsigned id = 0; id < 8; id++) {
-            sf::Uint8 result = (sf::Uint8) sqrt(pixel_buffer[id] * 256);
-            pixels[(pixel_id + id) * 4 + 0] = result;
-            pixels[(pixel_id + id) * 4 + 1] = result / 2;
-            pixels[(pixel_id + id) * 4 + 2] = 0;
-            pixels[(pixel_id + id) * 4 + 3] = 255;
-        }
+        memcpy(pixels + pixel_id * 4, pixel_buffer, sizeof(pixel_buffer));
     }
-    )  // END OF SIMD SECTION
 
-    NO_SIMD(
-    for (size_t pixel_id = 0; pixel_id < SCREEN_WIDTH * SCREEN_HEIGHT; ++pixel_id) {
-        int pixel_x = (int) pixel_id % (int) SCREEN_WIDTH - (int) SCREEN_WIDTH / 2,
-            pixel_y = (int) pixel_id / (int) SCREEN_WIDTH - (int) SCREEN_HEIGHT / 2;
+    scene->display_texture.update(pixels);
 
-        float local_x = (float) pixel_x * SCENE_SCALE * scale + SCENE_X_PAN,
-              local_y = (float) pixel_y * SCENE_SCALE * scale;
-        
-        float current_x = local_x, current_y = local_y;
-        unsigned char iter_count = 0;
-
-        for (unsigned iter_id = 0; iter_id < RENDER_ITERATION_COUNT; ++iter_id) {
-            float previous_x = current_x, previous_y = current_y;
-            current_x = (previous_x * previous_x) - (previous_y * previous_y) + local_x;
-            current_y = 2 * previous_x * previous_y + local_y;
-
-            float distance = current_x * current_x + current_y * current_y;
-            if (distance > POINT_DEATH_DISTANCE * POINT_DEATH_DISTANCE) break;
-
-            iter_count++;
-        }
-
-        sf::Uint8 result = (sf::Uint8) sqrt(iter_count * 256);
-        pixels[pixel_id * 4 + 0] = 0;
-        pixels[pixel_id * 4 + 1] = result / 2;
-        pixels[pixel_id * 4 + 2] = result;
-        pixels[pixel_id * 4 + 3] = 255;
-    }
-    )  // END OF NO-SIMD SECTION
-
-    }  // REPEATED SEGMENT END
-
-    scene->texture.update(pixels);
-
-    window->draw(scene->sprite);
+    window->draw(scene->display_sprite);
 }
 
 void on_closure_event(sf::Event event, sf::RenderWindow* window) {

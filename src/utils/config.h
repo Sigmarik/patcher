@@ -33,18 +33,7 @@ static const float ANIMATION_SPEED = 0.2f;
 
 static const unsigned int EVALUATION_WEIGHT = 128;
 
-#ifdef _DEBUG
-#define ANIMATION_BRANCH(positive, negative) negative
-#else
-#define ANIMATION_BRANCH(positive, negative) positive
-#endif
-
-#ifdef USE_SIMD
-#define ON_SIMD(...) __VA_ARGS__
-#define NO_SIMD(...)
-#else
-#define ON_SIMD(...)
-#define NO_SIMD(...) __VA_ARGS__
-#endif
+#define BACKGROUND_NAME "images/background.png"
+#define FOREGROUND_NAME "images/foreground.png"
 
 #endif

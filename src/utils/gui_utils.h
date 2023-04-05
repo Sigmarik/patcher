@@ -39,9 +39,11 @@ struct RenderScene {
     Camera camera = (Camera) {};
     sf::Time time = sf::Time::Zero;
     sf::Time last_update_time = sf::Time::Zero;
-    sf::VertexArray canvas = sf::VertexArray(sf::Quads, 4);
-    sf::Texture texture;
-    sf::Sprite sprite;
+    sf::Image background;
+    sf::Image foreground;
+    sf::Vector2i foreground_position = sf::Vector2i::Zero;
+    sf::Texture display_texture;
+    sf::Sprite display_sprite;
 };
 
 void init_scene(RenderScene* scene);
