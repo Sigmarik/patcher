@@ -57,13 +57,14 @@ int main(const int argc, const char** argv) {
     }
 
     if (sf::Shader::isAvailable() == false) {
-        log_dup(ERROR_REPORTS, "error", "Shader support is required to see the animation! (the program was patched though)\n");
+        log_dup(ERROR_REPORTS, "error", 
+            "Shader support is required to see the animation! (the program has been successfully patched though)\n");
         return_clean(EXIT_FAILURE);
     }
 
     sf::Shader shader;
     if (!shader.loadFromFile("shaders/textured.frag", sf::Shader::Fragment)) {
-        log_dup(ERROR_REPORTS, "error", "Failed to load shader!\n");
+        log_dup(ERROR_REPORTS, "error", "Failed to load the shader!\n");
         return_clean(EXIT_FAILURE);
     }
 
@@ -72,9 +73,8 @@ int main(const int argc, const char** argv) {
     RenderScene scene = {};
     init_scene(&scene);
 
-    track_allocation(scene, scene_dtor);
-
     sf::RenderWindow window(sf::VideoMode(SCREEN_WIDTH, SCREEN_HEIGHT), "Cracked y'all!");
+    window.setMouseCursorVisible(false);
 
     while (window.isOpen()) {
         sf::Time delta_time = ticker_clock.getElapsedTime();
@@ -94,6 +94,8 @@ int main(const int argc, const char** argv) {
         on_phys_tick_event(&window, &scene, delta_time);
         on_graph_tick_event(&window, &shader, &scene, delta_time);
     }
+
+    scene_dtor(&scene);
 
     return_clean(errno == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 }

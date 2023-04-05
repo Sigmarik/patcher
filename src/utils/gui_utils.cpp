@@ -59,17 +59,64 @@ void update_scene(RenderScene* scene, sf::RenderWindow* window, sf::Time dt) {
                               glm::vec2(1.0f, 1.0f);
     rel_mouse_pos.y *= -1.0f;
 
-    scene->foreground_position = mouse_pos;
+    scene->foreground_position = sf::Vector2i(mouse_pos.x - (int) scene->foreground.getSize().x / 2,
+                                              mouse_pos.y - (int) scene->foreground.getSize().y / 2);
 
     scene->time += dt;
     scene->last_update_time = scene->time;
 }
 
+// It uses the most simple and basic linear algorithm of alpha blending.
+static inline __m256i mix_colors(__m256i back, __m256i front) {
+    const char O = 0, I = (char) 255, Z = (char) 0x80;
+    const __m256i LEFT_SPLIT = _mm256_set_epi8(
+    Z, 29, Z, 28,  Z, 25, Z, 24,  Z, 21, Z, 20,  Z, 17, Z, 16,  Z, 13, Z, 12,  Z, 9, Z, 8,    Z, 5, Z, 4,  Z, 1, Z, 0
+    ); const __m256i RIGHT_SPLIT = _mm256_set_epi8(
+    Z, 31, Z, 30,  Z, 27, Z, 26,  Z, 23, Z, 22,  Z, 19, Z, 18,  Z, 15, Z, 14,  Z, 11, Z, 10,  Z, 7, Z, 6,  Z, 3, Z, 2
+    );
+    const __m256i ALPHA_EXTRACTOR = _mm256_set_epi8(
+    Z, 31, Z, 31,  Z, 27, Z, 27,  Z, 23, Z, 23,  Z, 19, Z, 19,  Z, 15, Z, 15,  Z, 11, Z, 11,  Z, 7, Z, 7,  Z, 3, Z, 3
+    );
+    const __m256i WHITE = _mm256_set_epi8(
+    O, I, O, I,    O, I, O, I,    O, I, O, I,    O, I, O, I,    O, I, O, I,    O, I, O, I,    O, I, O, I,  O, I, O, I
+    );
+
+    const __m256i ASSEMBLE_LEFT = _mm256_set_epi8(
+    Z, Z, 31, 29,  Z, Z, 27, 25,  Z, Z, 23, 21,  Z, Z, 19, 17,  Z, Z, 15, 13,  Z, Z, 11, 9,  Z, Z, 7, 5,  Z, Z, 3, 1
+    ); const __m256i ASSEMBLE_RIGHT = _mm256_set_epi8(
+    31, 29, Z, Z,  27, 25, Z, Z,  23, 21, Z, Z,  19, 17, Z, Z,  15, 13, Z, Z,  11, 9, Z, Z,  7, 5, Z, Z,  3, 1, Z, Z
+    );
+
+
+    // back  = [r g b a | r g b a | r g b a | ...]
+    // front = [r g b a | r g b a | r g b a | ...]
+
+    __m256i back_left   = _mm256_shuffle_epi8(back,  LEFT_SPLIT);
+    __m256i back_right  = _mm256_shuffle_epi8(back,  RIGHT_SPLIT);
+    __m256i front_left  = _mm256_shuffle_epi8(front, LEFT_SPLIT);
+    __m256i front_right = _mm256_shuffle_epi8(front, RIGHT_SPLIT);
+    // back_left   = [0 r 0 g | 0 r 0 g | 0 r 0 g | ...]
+    // back_right  = [0 b 0 a | 0 b 0 a | 0 b 0 a | ...]
+    // front_left  = [0 r 0 g | 0 r 0 g | 0 r 0 g | ...]
+    // front_right = [0 b 0 a | 0 b 0 a | 0 b 0 a | ...]
+
+    __m256i alpha_front = _mm256_shuffle_epi8(front, ALPHA_EXTRACTOR);
+    __m256i alpha_front_inverse = _mm256_sub_epi8(WHITE, alpha_front);
+    // alpha_front = [0 a 0 a | 0 a 0 a | 0 a 0 a | ...]
+
+    __m256i final_left  = _mm256_add_epi8(_mm256_mullo_epi16(front_left,  alpha_front),
+                                          _mm256_mullo_epi16(back_left,   alpha_front_inverse));
+    __m256i final_right = _mm256_add_epi8(_mm256_mullo_epi16(front_right, alpha_front),
+                                          _mm256_mullo_epi16(back_right,  alpha_front_inverse));
+
+    return _mm256_add_epi8(_mm256_shuffle_epi8(final_left,  ASSEMBLE_LEFT),
+                           _mm256_shuffle_epi8(final_right, ASSEMBLE_RIGHT));
+}
+
 void draw_scene(RenderScene* scene, sf::Shader* shader, sf::RenderWindow* window) {
-    __m256i shifter = _mm256_set_epi32(0, 1, 2, 3, 4, 5, 6, 7);
+    SILENCE_UNUSED(shader);
 
     static sf::Uint8 pixels[SCREEN_WIDTH * SCREEN_HEIGHT * 4] = "";
-    unsigned pixel_buffer[8 * 4] = {};
 
     const sf::Uint8* background_pixels = scene->background.getPixelsPtr();
     const sf::Uint8* foreground_pixels = scene->foreground.getPixelsPtr();
@@ -79,7 +126,7 @@ void draw_scene(RenderScene* scene, sf::Shader* shader, sf::RenderWindow* window
             pixel_y = (int) pixel_id / (int) SCREEN_WIDTH;
         
         if (pixel_y * (int) scene->background.getSize().x + pixel_x + 7 >=
-            scene->background.getSize().x * scene->background.getSize().y) continue;
+            (int) scene->background.getSize().x * (int) scene->background.getSize().y) continue;
 
         if ((pixel_x < scene->foreground_position.x || pixel_y < scene->foreground_position.y) ||
             (pixel_x + 7 >= scene->foreground_position.x + (int) scene->foreground.getSize().x ||
@@ -90,20 +137,13 @@ void draw_scene(RenderScene* scene, sf::Shader* shader, sf::RenderWindow* window
             continue;
         }
 
-        __m256i local_x = _mm256_set1_epi32(pixel_x),
-                local_y = _mm256_set1_epi32(pixel_y);
-        
-        local_x = _mm256_sub_epi32(local_x, shifter);
-
         __m256i color_bkg = _mm256_loadu_si256((__m256i_u*) (background_pixels +
             4 * (pixel_y * (int) scene->background.getSize().x + pixel_x)));
         __m256i color_frg = _mm256_loadu_si256((__m256i_u*) (foreground_pixels +
             4 * ((pixel_y - scene->foreground_position.y) * (int) scene->foreground.getSize().x +
             pixel_x - scene->foreground_position.x)));
 
-        _mm256_storeu_si256((__m256i_u*) (pixels + pixel_id * 4), color_frg);
-
-        // memcpy(pixels + pixel_id * 4, pixel_buffer, sizeof(pixel_buffer));
+        _mm256_storeu_si256((__m256i_u*) (pixels + pixel_id * 4), mix_colors(color_bkg, color_frg));
     }
 
     scene->display_texture.update(pixels);

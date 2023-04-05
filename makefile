@@ -53,6 +53,12 @@ LIB_OBJECTS = lib/util/argparser.o 				\
 
 all: main
 
+test:
+	make rm
+	make gui
+	make clean
+	make run_gui
+
 MAIN_OBJECTS = src/main.o 				\
 			   src/utils/main_utils.o 	\
 			   src/utils/common_utils.o \
