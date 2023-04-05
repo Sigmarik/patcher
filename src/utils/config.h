@@ -28,5 +28,23 @@ static const unsigned int RENDER_ITERATION_COUNT = 256;
 static const float SCENE_SCALE = 3.0f / (float) SCREEN_WIDTH;
 static const float SCENE_X_PAN = -1.48f;
 static const float POINT_DEATH_DISTANCE = 10;
+static const float MAX_MAGNIFICATION = 500.0f;
+static const float ANIMATION_SPEED = 0.2f;
+
+static const unsigned int EVALUATION_WEIGHT = 128;
+
+#ifdef _DEBUG
+#define ANIMATION_BRANCH(positive, negative) negative
+#else
+#define ANIMATION_BRANCH(positive, negative) positive
+#endif
+
+#ifdef USE_SIMD
+#define ON_SIMD(...) __VA_ARGS__
+#define NO_SIMD(...)
+#else
+#define ON_SIMD(...)
+#define NO_SIMD(...) __VA_ARGS__
+#endif
 
 #endif

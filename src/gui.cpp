@@ -78,6 +78,12 @@ int main(const int argc, const char** argv) {
         sf::Time delta_time = ticker_clock.getElapsedTime();
         ticker_clock.restart();
 
+        static char title[128] = "";
+        sprintf(title, "Cracked y'all! [FPS: %d, RPS: %d]",
+            (int) (1.0 / delta_time.asSeconds()), (int) ((float) EVALUATION_WEIGHT / delta_time.asSeconds()));
+
+        window.setTitle(std::string(title));
+
         sf::Event event;
         while (window.pollEvent(event)) {
             on_closure_event(event, &window);
