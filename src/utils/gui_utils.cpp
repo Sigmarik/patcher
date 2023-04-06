@@ -71,7 +71,8 @@ static inline __m256i mix_colors(__m256i back, __m256i front) {
     const char O = 0, I = (char) 255, Z = (char) 0x80;
     const __m256i LEFT_SPLIT = _mm256_set_epi8(
     Z, 29, Z, 28,  Z, 25, Z, 24,  Z, 21, Z, 20,  Z, 17, Z, 16,  Z, 13, Z, 12,  Z, 9, Z, 8,    Z, 5, Z, 4,  Z, 1, Z, 0
-    ); const __m256i RIGHT_SPLIT = _mm256_set_epi8(
+    );
+    const __m256i RIGHT_SPLIT = _mm256_set_epi8(
     Z, 31, Z, 30,  Z, 27, Z, 26,  Z, 23, Z, 22,  Z, 19, Z, 18,  Z, 15, Z, 14,  Z, 11, Z, 10,  Z, 7, Z, 6,  Z, 3, Z, 2
     );
     const __m256i ALPHA_EXTRACTOR = _mm256_set_epi8(
@@ -83,7 +84,8 @@ static inline __m256i mix_colors(__m256i back, __m256i front) {
 
     const __m256i ASSEMBLE_LEFT = _mm256_set_epi8(
     Z, Z, 31, 29,  Z, Z, 27, 25,  Z, Z, 23, 21,  Z, Z, 19, 17,  Z, Z, 15, 13,  Z, Z, 11, 9,  Z, Z, 7, 5,  Z, Z, 3, 1
-    ); const __m256i ASSEMBLE_RIGHT = _mm256_set_epi8(
+    );
+    const __m256i ASSEMBLE_RIGHT = _mm256_set_epi8(
     31, 29, Z, Z,  27, 25, Z, Z,  23, 21, Z, Z,  19, 17, Z, Z,  15, 13, Z, Z,  11, 9, Z, Z,  7, 5, Z, Z,  3, 1, Z, Z
     );
 
@@ -133,7 +135,7 @@ void draw_scene(RenderScene* scene, sf::Shader* shader, sf::RenderWindow* window
             pixel_y >= scene->foreground_position.y + (int) scene->foreground.getSize().y)) {
 
             memcpy(pixels + pixel_id * 4, background_pixels + 
-            4 * (pixel_y * (int) scene->background.getSize().x + pixel_x), sizeof(sf::Uint8) * 4 * 8);
+                   4 * (pixel_y * (int) scene->background.getSize().x + pixel_x), sizeof(sf::Uint8) * 4 * 8);
             continue;
         }
 
