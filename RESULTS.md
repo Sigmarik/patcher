@@ -1,6 +1,6 @@
 # Experiment results
 ## Task
-Measure performance of different ways of rendering Mandelbrot set on the user's screen.
+Measure performance of different ways of blending two images on top of each other.
 
 Approaches:
  1. Traditional per-pixel loop
@@ -11,21 +11,14 @@ Approaches:
 Both programs were compiled with the same version of GCC with the exact same flag (except one -D which defines program type, as this difference is measured).
 
 Screen size = 800 x 600
-
-Mandelbrot set with 256 iterations, kill distance of 10
-
-Magnification = 1 / (0.5 + 500) (central zoom with X size of the screen translating to 3 scene units with default ( = 1) magnification)
-
-X pan = -1.48
-
-Experiment set indicator: color of the fog (proven not to affect performance)
+Foreground and background files are located in folder 'assets/images/' and named accordingly
 
 128 rendering ticks per draw tick
 
 ## Results
-Single-register RPS (renders per second): 3-4 (was assumed to be 4 +- 1 in calculations)
+Single-register RPS (renders per second): 78 (varying from 76 to 80)
 
-SIMD RPS (renders per second): stable 23 (23.5 +- 0.5)
+SIMD RPS (renders per second): stable 365 (varying from 340 to 382).
 
 ## Result processing
-SIMD increased performance of the program by around 6.3 +- 1.7 times.
+SIMD has increased performance of the program by 4.25 - 5.03 times.

@@ -27,4 +27,18 @@ static const unsigned SCREEN_HEIGHT = 600;
 #define BACKGROUND_NAME "images/background.png"
 #define FOREGROUND_NAME "images/foreground.png"
 
+#ifdef EXPERIMENT
+    static const unsigned RENDER_WEIGHT = 128;
+#else
+    static const unsigned RENDER_WEIGHT = 1;
+#endif
+
+#ifdef USE_SIMD
+    #define ON_SIMD(...) __VA_ARGS__
+    #define NO_SIMD(...)
+#else
+    #define ON_SIMD(...)
+    #define NO_SIMD(...) __VA_ARGS__
+#endif
+
 #endif

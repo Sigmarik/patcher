@@ -59,8 +59,12 @@ void update_scene(RenderScene* scene, sf::RenderWindow* window, sf::Time dt) {
                               glm::vec2(1.0f, 1.0f);
     rel_mouse_pos.y *= -1.0f;
 
+    #ifndef EXPERIMENT
     scene->foreground_position = sf::Vector2i(mouse_pos.x - (int) scene->foreground.getSize().x / 2,
                                               mouse_pos.y - (int) scene->foreground.getSize().y / 2);
+    #else
+    scene->foreground_position = sf::Vector2i(0, 0);
+    #endif
 
     scene->time += dt;
     scene->last_update_time = scene->time;
@@ -123,6 +127,9 @@ void draw_scene(RenderScene* scene, sf::Shader* shader, sf::RenderWindow* window
     const sf::Uint8* background_pixels = scene->background.getPixelsPtr();
     const sf::Uint8* foreground_pixels = scene->foreground.getPixelsPtr();
 
+    for (unsigned __render_pass_id = 0; __render_pass_id < RENDER_WEIGHT; ++__render_pass_id) {
+
+    ON_SIMD(
     for (size_t pixel_id = 0; pixel_id + 7 < SCREEN_WIDTH * SCREEN_HEIGHT; pixel_id += 8) {
         int pixel_x = (int) pixel_id % (int) SCREEN_WIDTH,
             pixel_y = (int) pixel_id / (int) SCREEN_WIDTH;
@@ -147,6 +154,43 @@ void draw_scene(RenderScene* scene, sf::Shader* shader, sf::RenderWindow* window
 
         _mm256_storeu_si256((__m256i_u*) (pixels + pixel_id * 4), mix_colors(color_bkg, color_frg));
     }
+    )  // End of SIMD-based section
+
+    NO_SIMD(
+    for (size_t pixel_id = 0; pixel_id < SCREEN_WIDTH * SCREEN_HEIGHT; ++pixel_id) {
+        int pixel_x = (int) pixel_id % (int) SCREEN_WIDTH,
+            pixel_y = (int) pixel_id / (int) SCREEN_WIDTH;
+        
+        if (pixel_y * (int) scene->background.getSize().x + pixel_x + 7 >=
+            (int) scene->background.getSize().x * (int) scene->background.getSize().y) continue;
+
+        if ((pixel_x < scene->foreground_position.x || pixel_y < scene->foreground_position.y) ||
+            (pixel_x + 7 >= scene->foreground_position.x + (int) scene->foreground.getSize().x ||
+            pixel_y >= scene->foreground_position.y + (int) scene->foreground.getSize().y)) {
+
+            memcpy(pixels + pixel_id * 4, background_pixels + 
+                   4 * (pixel_y * (int) scene->background.getSize().x + pixel_x), sizeof(sf::Uint8) * 4);
+            continue;
+        }
+
+        sf::Uint8 frg_color[4] = {0, 0, 0, 0};
+        memcpy(frg_color, foreground_pixels +
+            4 * ((pixel_y - scene->foreground_position.y) * (int) scene->foreground.getSize().x +
+            pixel_x - scene->foreground_position.x), 4 * sizeof(*frg_color));
+        sf::Uint8 bkg_color[4] = {0, 0, 0, 0};
+        memcpy(bkg_color, background_pixels + 4 * (pixel_y * (int) scene->background.getSize().x + pixel_x),
+            4 * sizeof(*bkg_color));
+
+        sf::Uint8* final_color = pixels + pixel_id * 4;
+        for (int channel = 0; channel < 4; ++channel) {
+            final_color[channel] = (sf::Uint8) (((int) frg_color[channel] * frg_color[3] + 
+                                                (int) bkg_color[channel] * (255 - frg_color[3])) >> 8);
+        }
+    }
+
+    )  // End of non-simd section
+
+    }  // End of additional render passes
 
     scene->display_texture.update(pixels);
 

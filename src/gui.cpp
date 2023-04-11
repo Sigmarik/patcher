@@ -81,8 +81,8 @@ int main(const int argc, const char** argv) {
         ticker_clock.restart();
 
         static char title[128] = "";
-        sprintf(title, "Cracked y'all! [FPS: %d]",
-            (int) (1.0 / delta_time.asSeconds()));
+        sprintf(title, "Cracked y'all! [FPS: %d, RPS: %d]",
+            (int) (1.0 / delta_time.asSeconds()), (int) ((float) RENDER_WEIGHT / delta_time.asSeconds()));
 
         window.setTitle(std::string(title));
 
