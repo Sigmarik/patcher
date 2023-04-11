@@ -99,6 +99,8 @@ void draw_scene(RenderScene* scene, sf::Shader* shader, sf::RenderWindow* window
             if (_mm256_movemask_epi8(condition)) break;
         }
 
+        iter_count = _mm256_mullo_epi32(iter_count, _mm256_set1_epi32(256 / RENDER_ITERATION_COUNT));
+
         _mm256_storeu_si256((__m256i*) pixel_buffer, iter_count);
 
         for (unsigned id = 0; id < 8; id++) {
