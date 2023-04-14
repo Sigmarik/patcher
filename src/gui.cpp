@@ -85,7 +85,7 @@ int main(const int argc, const char** argv) {
 
         static char title[128] = "";
         unsigned rps = (unsigned) ((float) RENDER_WEIGHT / delta_time.asSeconds());
-        if (rps < MAX_RPS) ++rps_distribution[rpd];
+        if (rps < MAX_RPS) ++rps_distribution[rps];
 
         sprintf(title, "Cracked y'all! [FPS: %d, RPS: %u]",
             (int) (1.0 / delta_time.asSeconds()), rps);
@@ -105,9 +105,9 @@ int main(const int argc, const char** argv) {
 
     FILE* rps_table = fopen(RPS_TABLE_NAME, "w");
     if (rps_table) {
-        fprintf(rps_table, "rps,count");
+        fprintf(rps_table, "rps,count\n");
         for (unsigned id = 0; id < MAX_RPS; ++id) {
-            fprintf(prs_table, "%u, %u\n", id, rps_distribution[id]);
+            fprintf(rps_table, "%u, %u\n", id, rps_distribution[id]);
         }
         fclose(rps_table);
     } else {
