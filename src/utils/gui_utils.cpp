@@ -119,6 +119,13 @@ static inline __m256i mix_colors(__m256i back, __m256i front) {
                            _mm256_shuffle_epi8(final_right, ASSEMBLE_RIGHT));
 }
 
+static inline void mix_colors_no_simd(sf::Uint8[4] background, sf::Uint8[4] foreground, sf::Uint8[4] result) {
+    for (int channel = 0; channel < 4; ++channel) {
+        result[channel] = (sf::Uint8) (((int) foreground[channel] * foreground[3] +
+            (int) background[channel] * (255 - foreground[3])) >> 8);
+    }
+}
+
 void draw_scene(RenderScene* scene, sf::Shader* shader, sf::RenderWindow* window) {
     SILENCE_UNUSED(shader);
 
@@ -182,10 +189,7 @@ void draw_scene(RenderScene* scene, sf::Shader* shader, sf::RenderWindow* window
             4 * sizeof(*bkg_color));
 
         sf::Uint8* final_color = pixels + pixel_id * 4;
-        for (int channel = 0; channel < 4; ++channel) {
-            final_color[channel] = (sf::Uint8) (((int) frg_color[channel] * frg_color[3] + 
-                                                (int) bkg_color[channel] * (255 - frg_color[3])) >> 8);
-        }
+        mix_colors_no_simd(frg_color, bkg_color, final_color);
     }
 
     )  // End of non-simd section
