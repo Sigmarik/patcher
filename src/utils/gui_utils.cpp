@@ -119,7 +119,7 @@ static inline __m256i mix_colors(__m256i back, __m256i front) {
                            _mm256_shuffle_epi8(final_right, ASSEMBLE_RIGHT));
 }
 
-static inline void mix_colors_no_simd(sf::Uint8[4] background, sf::Uint8[4] foreground, sf::Uint8[4] result) {
+static inline void mix_colors_no_simd(sf::Uint8 foreground[4], sf::Uint8 background[4], sf::Uint8 result[4]) {
     for (int channel = 0; channel < 4; ++channel) {
         result[channel] = (sf::Uint8) (((int) foreground[channel] * foreground[3] +
             (int) background[channel] * (255 - foreground[3])) >> 8);

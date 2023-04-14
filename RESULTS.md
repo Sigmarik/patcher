@@ -18,7 +18,9 @@ Foreground and background files are located in folder 'assets/images/' and named
 ## Results
 Single-register RPS (renders per second): 78 (varying from 76 to 80)
 
-SIMD RPS (renders per second): stable 365 (varying from 340 to 382).
+SIMD RPS (renders per second): 361 (varying from 340 to 382).
 
 ## Result processing
 SIMD has increased performance of the program by 4.25 - 5.03 times.
+
+TODO: describe asm code differences, choose most influential/noticeable parts

@@ -1,6 +1,6 @@
 CC = g++
 
-CPPFLAGS = -I./ -I./include/ -D _DEBUG -DUSE_SIMD -ggdb3 -std=c++2a -O3 -Wall -Wextra -Weffc++\
+CPPFLAGS = -I./ -I./include/ -D _DEBUG -ggdb3 -std=c++2a -O3 -Wall -Wextra -Weffc++\
 -march=corei7 -mavx2\
 -Waggressive-loop-optimizations -Wc++14-compat -Wmissing-declarations\
 -Wcast-align -Wchar-subscripts -Wconditionally-supported\
