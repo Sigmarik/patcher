@@ -24,8 +24,11 @@ static const char DFLT_PROGRAM_NAME[] = "CRACKME.COM";
 static const unsigned SCREEN_WIDTH = 800;
 static const unsigned SCREEN_HEIGHT = 600;
 
+static const unsigned MAX_RPS = 1000;
+
 #define BACKGROUND_NAME "images/background.png"
 #define FOREGROUND_NAME "images/foreground.png"
+#define RPS_TABLE_NAME "rps_table.csv"
 
 #ifdef EXPERIMENT
     static const unsigned RENDER_WEIGHT = 128;

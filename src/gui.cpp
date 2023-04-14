@@ -73,6 +73,9 @@ int main(const int argc, const char** argv) {
     RenderScene scene = {};
     init_scene(&scene);
 
+    unsigned rps_distribution[MAX_RPS] = {};
+    for (unsigned id = 0; id < MAX_RPS; ++id) rps_distribution[id] = 0;
+
     sf::RenderWindow window(sf::VideoMode(SCREEN_WIDTH, SCREEN_HEIGHT), "Cracked y'all!");
     window.setMouseCursorVisible(false);
 
@@ -81,8 +84,11 @@ int main(const int argc, const char** argv) {
         ticker_clock.restart();
 
         static char title[128] = "";
-        sprintf(title, "Cracked y'all! [FPS: %d, RPS: %d]",
-            (int) (1.0 / delta_time.asSeconds()), (int) ((float) RENDER_WEIGHT / delta_time.asSeconds()));
+        unsigned rps = (unsigned) ((float) RENDER_WEIGHT / delta_time.asSeconds());
+        if (rps < MAX_RPS) ++rps_distribution[rpd];
+
+        sprintf(title, "Cracked y'all! [FPS: %d, RPS: %u]",
+            (int) (1.0 / delta_time.asSeconds()), rps);
 
         window.setTitle(std::string(title));
 
@@ -96,6 +102,17 @@ int main(const int argc, const char** argv) {
     }
 
     scene_dtor(&scene);
+
+    FILE* rps_table = fopen(RPS_TABLE_NAME, "w");
+    if (rps_table) {
+        fprintf(rps_table, "rps,count");
+        for (unsigned id = 0; id < MAX_RPS; ++id) {
+            fprintf(prs_table, "%u, %u\n", id, rps_distribution[id]);
+        }
+        fclose(rps_table);
+    } else {
+        log_printf(WARNINGS, "warning", "Failed to open RPS table. No RPS data will be saved.\n");
+    }
 
     return_clean(errno == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 }
