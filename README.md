@@ -23,6 +23,12 @@ Return project to its original state:
 
 `...# make rm`
 
+## Experiment
+This project can be used for measuring performance gain from using SIMD on the task of image processing (linear transparency blend).
+
+Experiment report:
+ - RUS: **[RESULTS_RUS.md](./RESULTS_RUS.md)**
+
 ## Code of Conduct
 For information about our community goals read **CODE_OF_CONDUCT.md**.
 ## Licensing
